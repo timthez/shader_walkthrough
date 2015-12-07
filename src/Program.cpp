@@ -1,5 +1,12 @@
 #include "Program.h"
 
+#define ANSI_COLOR_RED     "\x1b[31m"
+#define ANSI_COLOR_GREEN   "\x1b[32m"
+#define ANSI_COLOR_YELLOW  "\x1b[33m"
+#define ANSI_COLOR_BLUE    "\x1b[34m"
+#define ANSI_COLOR_MAGENTA "\x1b[35m"
+#define ANSI_COLOR_CYAN    "\x1b[36m"
+#define ANSI_COLOR_RESET   "\x1b[0m"
 
 
 Program::Program(){
@@ -7,16 +14,23 @@ Program::Program(){
 }
 
 void Program::attachShader(Shader shader){
+  char buff[255];  
+  
+  Logger::log(ANSI_COLOR_GREEN "--------------------------------------------------------------------------------");
+  snprintf(buff, sizeof(buff), "                              Attaching %s           ",shader.getShaderType().c_str());
+  Logger::log(buff);  
+  Logger::log("--------------------------------------------------------------------------------" ANSI_COLOR_RESET);
+
   glAttachShader(programID, shader.getID());
 }
 
-void Program::checkErrors(){
+bool Program::checkErrors(){
   GLint success;
   glGetProgramiv(programID, GL_LINK_STATUS, &success);
   
   if (success == GL_FALSE){
       //Get Length of Error Log
-      printf("Link Failed.\n");
+      printf(ANSI_COLOR_RED "Link Failed.\n" ANSI_COLOR_RESET);
       GLint length;
       glGetProgramiv(programID, GL_INFO_LOG_LENGTH, &length);        
       if (length > 0)
@@ -26,17 +40,22 @@ void Program::checkErrors(){
           GLsizei written;
           glGetProgramInfoLog(programID, length, &written, log);
           //Print Error
-          fprintf(stderr, "%s\n\n",log);
+          fprintf(stderr,ANSI_COLOR_RED "%s\n\n" ANSI_COLOR_RESET,log);
           delete[] log;
-          //exit(EXIT_FAILURE);
+          return true;
       }
   }
+  return false;
 }
 
 
 void Program::link(){
+  Logger::log(ANSI_COLOR_GREEN "--------------------------------------------------------------------------------");
+  Logger::log("                              Linking Program           ");
+  Logger::log("--------------------------------------------------------------------------------" ANSI_COLOR_RESET);
   glLinkProgram(programID);
-  checkErrors();
+  if(!checkErrors())
+    Logger::log("Linking Complete");
 }
 
 void Program::use(){
@@ -61,7 +80,7 @@ void Program::printActiveAttribs(){
   
   name = (GLchar *) malloc( maxLength );
   
-  printf("Active Shader Attributes\n");
+  printf(ANSI_COLOR_CYAN "Active Shader Attributes\n");
   printf("------------------------\n");
   for( int i = 0; i < nAttribs; i++ ) {
       //Get attribute information
@@ -71,7 +90,33 @@ void Program::printActiveAttribs(){
       //Print Attribute Info
       printf("%d - %s (%s)\n",location, name,getTypeString(type).c_str());
   }
+  printf("------------------------\n\n" ANSI_COLOR_RESET);
+  free(name);
+}
+
+void Program::printActiveUniforms(){  
   
+  GLint written, size, location, maxLength, nAttribs;
+  GLenum type;
+  GLchar * name;
+  
+  //Get max attribute name length
+  glGetProgramiv(programID, GL_ACTIVE_UNIFORM_MAX_LENGTH, &maxLength);
+  
+  //Get number of Attributes
+  glGetProgramiv(programID, GL_ACTIVE_UNIFORMS, &nAttribs);
+  
+  name = (GLchar *) malloc( maxLength );
+  
+  printf(ANSI_COLOR_CYAN "Active Shader Uniforms\n");
+  printf("------------------------\n");
+  for( int i = 0; i < nAttribs; i++ ) {
+      //Get attribute information
+      glGetActiveUniform( programID, i, maxLength, &written, &size, &type, name );      
+      //Print Attribute Info
+      printf("%s (%s)\n", name,getTypeString(type).c_str());
+  }
+  printf("------------------------\n\n" ANSI_COLOR_RESET);
   free(name);
 }
 

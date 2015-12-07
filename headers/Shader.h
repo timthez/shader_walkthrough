@@ -22,10 +22,12 @@ class Shader{
 public:
     Shader(string file,GLenum type);
     GLuint getID(){return shaderID;};
+    string getShaderType(){return shaderType;};
 private:
   GLuint shaderID;
+  string shaderType;
   GLchar * readShaderFile(const char *fileName);
-  void checkErrors(string fileName);
+  bool checkErrors(string fileName);
   static string getShaderType(GLenum type);
   
 };

@@ -5,6 +5,13 @@
 //  Created by Tim Zuercher on 11/21/15.
 //
 //
+#define ANSI_COLOR_RED     "\x1b[31m"
+#define ANSI_COLOR_GREEN   "\x1b[32m"
+#define ANSI_COLOR_YELLOW  "\x1b[33m"
+#define ANSI_COLOR_BLUE    "\x1b[34m"
+#define ANSI_COLOR_MAGENTA "\x1b[35m"
+#define ANSI_COLOR_CYAN    "\x1b[36m"
+#define ANSI_COLOR_RESET   "\x1b[0m"
 
 #include "Shader.h"
 
@@ -16,7 +23,7 @@ GLchar * Shader::readShaderFile(const char *fileName){
     
     //Check for null
     if (fileName == NULL) {
-        printf("File Name was empty of NULL!\n");
+        printf( ANSI_COLOR_RED "File Name was empty of NULL!\n" ANSI_COLOR_RESET);
         exit(EXIT_FAILURE);
     };
     
@@ -24,7 +31,7 @@ GLchar * Shader::readShaderFile(const char *fileName){
     
     //Check for errors opening file
     if (fp == NULL){
-        fprintf(stderr,"Failed to read shader from '%s' file.\n\n",fileName );
+        fprintf(stderr, ANSI_COLOR_RED "Failed to read shader from '%s' file.\n\n" ANSI_COLOR_RESET,fileName );
         exit(EXIT_FAILURE);   
     };
     
@@ -51,7 +58,7 @@ GLchar * Shader::readShaderFile(const char *fileName){
     
     //Check for Any errors
     if (content == NULL){
-        fprintf(stderr,"Failed to read shader from '%s' file.\n\n",fileName );
+        fprintf(stderr, ANSI_COLOR_RED "Failed to read shader from '%s' file.\n\n" ANSI_COLOR_RESET,fileName );
         exit(EXIT_FAILURE);
     }
     
@@ -60,14 +67,14 @@ GLchar * Shader::readShaderFile(const char *fileName){
 
 
 
-void Shader::checkErrors(string fileName){
+bool Shader::checkErrors(string fileName){
     //Check for Compile Errors
     GLint success;
     glGetShaderiv(shaderID, GL_COMPILE_STATUS, &success);
     
     if (success == GL_FALSE){
         //Get Length of Error Log
-        printf("Compilation Failed for %s.\n",fileName.c_str());
+        printf(ANSI_COLOR_RED "Compilation Failed for %s.\n" ANSI_COLOR_RESET, fileName.c_str());
         GLint length;
         glGetShaderiv(shaderID, GL_INFO_LOG_LENGTH, &length);        
         if (length > 0)
@@ -77,14 +84,22 @@ void Shader::checkErrors(string fileName){
             GLsizei written;
             glGetShaderInfoLog(shaderID, length, &written, log);
             //Print Error
-            fprintf(stderr, "log:\n%s\n\n", log );
+            fprintf(stderr, ANSI_COLOR_RED "%s\n\n" ANSI_COLOR_RESET, log );
             delete[] log;
-            //exit(EXIT_FAILURE);
+            return true;
         }
     }
+    return false;
 }
 
 Shader::Shader(string file, GLenum type){
+    this->shaderType = getShaderType(type);
+    
+    char buff[255];
+    snprintf(buff, sizeof(buff),"                             Creating %s                    ",  getShaderType(type).c_str());
+    Logger::log(ANSI_COLOR_GREEN "################################################################################");
+    Logger::log(buff);
+    Logger::log("################################################################################" ANSI_COLOR_RESET);
     shaderID = glCreateShader(type);
     //Read Shader from file
     
@@ -99,12 +114,12 @@ Shader::Shader(string file, GLenum type){
     free(source);
     Logger::log("Linking Complete");
     
-    char buff[255];
-    snprintf(buff, sizeof(buff), "Compiling Shader '%s' as %s", file.c_str(), getShaderType(type).c_str());
+    
+    snprintf(buff, sizeof(buff), ANSI_COLOR_GREEN "Compiling Shader '%s' as %s" ANSI_COLOR_RESET, file.c_str(), getShaderType(type).c_str());
     Logger::log(buff);
     glCompileShader(shaderID);
-    checkErrors(file);
-    Logger::log("Compiliation Complete\n");
+    if(!checkErrors(file))
+        Logger::log("Compilation Complete\n");
 }
 
 string Shader::getShaderType(GLenum type){

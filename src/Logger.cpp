@@ -8,10 +8,13 @@
 
 #include "Logger.h"
 
+
+
 bool Logger::show = true;
 
 void Logger::log(const char * str){
     if(show){
-        printf("%s\n",str);
+        printf(  "%s\n" ,str);
     }
 }
+
